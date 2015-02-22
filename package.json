@@ -1,6 +1,6 @@
 {
   "name": "rpi-rgb-led-matrix",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Control a RGB LED display with Raspberry Pi via GPIO",
   "main": "main.js",
   "dependencies": {
