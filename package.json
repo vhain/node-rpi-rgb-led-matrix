@@ -9,5 +9,9 @@
   },
   "devDependencies": {},
   "author": "Henner Zeller, Rob Middleton",
-  "license": "GPLv2"
+  "license": "GPLv2",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Rob-ot/rpi-rgb-led-matrix.git"
+  }
 }
