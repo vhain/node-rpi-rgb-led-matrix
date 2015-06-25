@@ -64,30 +64,50 @@ private:
   const uint8_t row_mask_;
 
   union IoBits {
+#ifdef ADAFRUIT_RGBMATRIX_HAT
     struct {
       // These reflect the GPIO mapping. The Revision1 and Revision2 boards
       // have different GPIO mappings for 0/1 vs 3/4. Just use both.
-      unsigned int output_enable_rev1 : 1;  // 0      (RPi 1, Revision 1)
-      unsigned int clock_rev1         : 1;  // 1      (RPi 1, Revision 1)
-      unsigned int output_enable_rev2 : 1;  // 2      (Pi1.Rev2; masks: I2C SDA)
-      unsigned int clock_rev2         : 1;  // 3      (Pi1.Rev2; masks: I2C SCL)
-      unsigned int strobe             : 1;  // 4
-      unsigned int unused_5_6         : 2;  // 5..6   (only on A+/B+/Pi2)
-      unsigned int row                : 4;  // 7..10  (masks: some of SPI_0)
-      unsigned int unused_11          : 1;  // 11     (also: SCKL of SPI_0)
-      unsigned int unused_12_13       : 2;  // 12..13 (only on A+/B+/Pi2)
-      unsigned int unused_14_15       : 2;  // 14..15 (keeping free: TxD, RxD)
-      unsigned int unused_16          : 1;  // 16     (only on A+/B+/Pi2)
-      unsigned int r1                 : 1;  // 17
-      unsigned int g1                 : 1;  // 18
-      unsigned int unused_19_21       : 3;  // 19..21 (only on A+/B+/Pi2)
-      unsigned int b1                 : 1;  // 22
-      unsigned int r2                 : 1;  // 23
-      unsigned int g2                 : 1;  // 24
-      unsigned int b2                 : 1;  // 25
-      unsigned int unused_26          : 1;  // 26     (only on A+/B+/Pi2)
-      unsigned int unused_27          : 1;  // 27     (Only RPi1:Rev2)
+      unsigned int unused1 : 4;             // 0-3
+      unsigned int output_enable : 1;       // 4
+      unsigned int r1 : 1;                  // 5
+      unsigned int b1 : 1;                  // 6
+      unsigned int unused2 : 5;             // 7-11
+      unsigned int r2 : 1;                  // 12
+      unsigned int g1 : 1;                  // 13
+      unsigned int unused3 : 2;             // 14-15
+      unsigned int g2 : 1;                  // 16
+      unsigned int clock : 1;               // 17
+      unsigned int unused4 : 2;             // 18-19
+      unsigned int d : 1;                   // 20
+      unsigned int strobe : 1;              // 21
+      unsigned int a : 1;                   // 22
+      unsigned int b2 : 1;                  // 23
+      unsigned int unused5 : 2;             // 24-25
+      unsigned int b : 1;                   // 26
+      unsigned int c : 1;                   // 27
     } bits;
+#else
+    struct {
+      // These reflect the GPIO mapping. The Revision1 and Revision2 boards
+      // have different GPIO mappings for 0/1 vs 3/4. Just use both.
+      unsigned int output_enable_rev1 : 1;  // 0
+      unsigned int clock_rev1 : 1;          // 1
+      unsigned int output_enable_rev2 : 1;  // 2
+      unsigned int clock_rev2  : 1;         // 3
+      unsigned int strobe : 1;              // 4
+      unsigned int unused2 : 2;             // 5..6
+      unsigned int row : 4;                 // 7..10
+      unsigned int unused3 : 6;             // 11..16
+      unsigned int r1 : 1;                  // 17
+      unsigned int g1 : 1;                  // 18
+      unsigned int unused4 : 3;
+      unsigned int b1 : 1;                  // 22
+      unsigned int r2 : 1;                  // 23
+      unsigned int g2 : 1;                  // 24
+      unsigned int b2 : 1;                  // 25
+    } bits;
+#endif
     uint32_t raw;
     IoBits() : raw(0) {}
   };

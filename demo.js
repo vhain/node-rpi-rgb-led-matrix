@@ -4,7 +4,7 @@
 
 var board = require('./main')
 
-var boardHeight = 16
+var boardHeight = 32
 
 board.start(boardHeight)
 

@@ -21,6 +21,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <math.h>
@@ -31,36 +32,30 @@ enum {
 };
 
 static const long kBaseTimeNanos = 200;
-const long row_sleep_nanos[11] = {
-  (1 * kBaseTimeNanos),
-  (2 * kBaseTimeNanos),
-  (4 * kBaseTimeNanos),
-  (8 * kBaseTimeNanos),
-  (16 * kBaseTimeNanos),
-  (32 * kBaseTimeNanos),
-  (64 * kBaseTimeNanos),
-  (128 * kBaseTimeNanos),
-  (256 * kBaseTimeNanos),
-  (512 * kBaseTimeNanos),
-  (1024 * kBaseTimeNanos),
-};
+
+volatile uint32_t *freeRunTimer = NULL; // GPIO may override on startup
 
 static void sleep_nanos(long nanos) {
-  // For sleep times above 20usec, nanosleep seems to be fine, but it has
-  // an offset of about 20usec (on the RPi distribution I was testing it on).
-  // That means, we need to give it 80us to get 100us.
-  // For values lower than roughly 30us, this is not accurate anymore and we
-  // need to switch to busy wait.
-  // TODO: compile Linux kernel realtime extensions and watch if the offset-time
-  // changes and hope for less jitter.
   if (nanos > 28000) {
-    struct timespec sleep_time = { 0, nanos - 20000 };
-    nanosleep(&sleep_time, NULL);
-  } else {
-    // The following loop is determined empirically on a 700Mhz RPi
-    for (int i = nanos >> 2; i != 0; --i) {
-      asm("");   // force GCC not to optimize this away.
+    if(freeRunTimer) { // Pi 2?
+      // nanosleep() is ALL MESSED UP on Pi 2.  Instead we'll poll the
+      // free-running timer.  Spinning like this would clobber the single-
+      // core Pi 1 (hence nanosleep below), but seems OK-ish on the Pi 2.
+      // nanosleep() would still be preferred, but we might need to wait
+      // for an OS update with decent timer resolution.
+      uint32_t micros    = nanos / 1000,
+               startTime = *freeRunTimer;
+      while((*freeRunTimer - startTime) < micros);
+    } else {
+      // On Pi 1, nanosleep() is only mildly messed up, with a ~20 usec
+      // offset that must be compensated for.  For very short intervals
+      // (<30 uS, below) an idle counter loop is used instead.
+      struct timespec sleep_time = { 0, nanos - 20000 };
+      nanosleep(&sleep_time, NULL);
     }
+  } else {
+    // The following loop is determined empirically
+    for(volatile int i = nanos >> 3; i--; );
   }
 }
 
@@ -80,14 +75,25 @@ RGBMatrix::Framebuffer::~Framebuffer() {
   // Tell GPIO about all bits we intend to use.
   IoBits b;
   b.raw = 0;
+#ifdef ADAFRUIT_RGBMATRIX_HAT
+  b.bits.output_enable = 1;
+  b.bits.clock = 1;
+#else
   b.bits.output_enable_rev1 = b.bits.output_enable_rev2 = 1;
   b.bits.clock_rev1 = b.bits.clock_rev2 = 1;
+#endif
+
   b.bits.strobe = 1;
   b.bits.r1 = b.bits.g1 = b.bits.b1 = 1;
   b.bits.r2 = b.bits.g2 = b.bits.b2 = 1;
+#ifdef ADAFRUIT_RGBMATRIX_HAT
+  b.bits.a = b.bits.b = b.bits.c = b.bits.d = 1;
+#else
   b.bits.row = 0x0f;
+#endif
   // Initialize outputs, make sure that all of these are supported bits.
   const uint32_t result = io->InitOutputs(b.raw);
+  printf("Result: 0x%X v 0x%X\n", result, b.raw);
   assert(result == b.raw);
 }
 
@@ -201,20 +207,40 @@ void RGBMatrix::Framebuffer::DumpToMatrix(GPIO *io) {
   IoBits color_clk_mask;   // Mask of bits we need to set while clocking in.
   color_clk_mask.bits.r1 = color_clk_mask.bits.g1 = color_clk_mask.bits.b1 = 1;
   color_clk_mask.bits.r2 = color_clk_mask.bits.g2 = color_clk_mask.bits.b2 = 1;
+#ifdef ADAFRUIT_RGBMATRIX_HAT
+  color_clk_mask.bits.clock = 1;
+#else
   color_clk_mask.bits.clock_rev1 = color_clk_mask.bits.clock_rev2 = 1;
+#endif
 
   IoBits row_mask;
+#ifdef ADAFRUIT_RGBMATRIX_HAT
+  row_mask.bits.a = row_mask.bits.b = row_mask.bits.c = row_mask.bits.d = 1;
+#else
   row_mask.bits.row = 0x0f;
+#endif
 
   IoBits clock, output_enable, strobe, row_address;
+#ifdef ADAFRUIT_RGBMATRIX_HAT
+  clock.bits.clock = 1;
+  output_enable.bits.output_enable = 1;
+#else
   clock.bits.clock_rev1 = clock.bits.clock_rev2 = 1;
   output_enable.bits.output_enable_rev1 = 1;
   output_enable.bits.output_enable_rev2 = 1;
+#endif
   strobe.bits.strobe = 1;
 
   const int pwm_to_show = pwm_bits_;  // Local copy, might change in process.
   for (uint8_t d_row = 0; d_row < double_rows_; ++d_row) {
+#ifdef ADAFRUIT_RGBMATRIX_HAT
+    row_address.bits.a = d_row;
+    row_address.bits.b = d_row >> 1;
+    row_address.bits.c = d_row >> 2;
+    row_address.bits.d = d_row >> 3;
+#else
     row_address.bits.row = d_row;
+#endif
     io->WriteMaskedBits(row_address.raw, row_mask.raw);  // Set row address
 
     // Rows can't be switched very quickly without ghosting, so we do the
@@ -236,7 +262,7 @@ void RGBMatrix::Framebuffer::DumpToMatrix(GPIO *io) {
 
       // Now switch on for the sleep time necessary for that bit-plane.
       io->ClearBits(output_enable.raw);
-      sleep_nanos(row_sleep_nanos[b]);
+      sleep_nanos(kBaseTimeNanos << b);
       io->SetBits(output_enable.raw);
     }
   }

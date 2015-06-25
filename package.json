@@ -8,10 +8,34 @@
     "nan": "^1.6.2"
   },
   "devDependencies": {},
-  "author": "Henner Zeller, Rob Middleton",
+  "author": {
+    "name": "Henner Zeller, Rob Middleton"
+  },
   "license": "GPLv2",
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:Rob-ot/rpi-rgb-led-matrix.git"
-  }
+  "scripts": {
+    "install": "node-gyp rebuild"
+  },
+  "gypfile": true,
+  "gitHead": "4afbc103a4c9a6a6519bbbb6cb506813950ac298",
+  "_id": "rpi-rgb-led-matrix@1.0.0",
+  "_shasum": "cda5355197fabbe65598bc952ffa67174ef8e37b",
+  "_from": "rpi-rgb-led-matrix@*",
+  "_npmVersion": "1.4.13",
+  "_npmUser": {
+    "name": "themiddleman",
+    "email": "rob@middlerob.com"
+  },
+  "maintainers": [
+    {
+      "name": "themiddleman",
+      "email": "rob@middlerob.com"
+    }
+  ],
+  "dist": {
+    "shasum": "cda5355197fabbe65598bc952ffa67174ef8e37b",
+    "tarball": "http://registry.npmjs.org/rpi-rgb-led-matrix/-/rpi-rgb-led-matrix-1.0.0.tgz"
+  },
+  "directories": {},
+  "_resolved": "https://registry.npmjs.org/rpi-rgb-led-matrix/-/rpi-rgb-led-matrix-1.0.0.tgz",
+  "readme": "ERROR: No README data found!"
 }
