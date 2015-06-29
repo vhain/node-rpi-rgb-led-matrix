@@ -9,6 +9,9 @@
         "lib/framebuffer.cc",
         "lib/thread.cc"
       ],
+	"defines": [
+        'ADAFRUIT_RGBMATRIX_HAT'
+      ],
       "cflags_cc": [ "-Llib -lrgbmatrix -lrt -lm -lpthread" ],
       "include_dirs" : [
         "include",
