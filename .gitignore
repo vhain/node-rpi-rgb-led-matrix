@@ -1,5 +1,6 @@
 *.o
 *.a
-
+*.AppleDouble
+.AppleDouble
 node_modules
 build
