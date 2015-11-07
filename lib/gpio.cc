@@ -33,7 +33,7 @@
 #define GPIO_SET *(gpio+7)  // sets   bits which are 1 ignores bits which are 0
 #define GPIO_CLR *(gpio+10) // clears bits which are 1 ignores bits which are 0
 
-/*static*/ const uint32_t ::rgb_matrix::GPIO::kValidBits 
+/*static*/ const unsigned int ::rgb_matrix::GPIO::kValidBits 
 = ((1 <<  0) | (1 <<  1) | // Revision 1 accessible
    (1 <<  2) | (1 <<  3) | // Revision 2 accessible
    (1 <<  4) | (1 <<  7) | (1 << 8) | (1 <<  9) |
@@ -41,14 +41,14 @@
    (1 << 22) | (1 << 23) | (1 << 24) | (1 << 25)| (1 << 27)
 // Add support for A+/B+!
  | (1 <<  5) | (1 <<  6) | (1 << 12) | (1 << 13) | (1 << 16) |
-   (1 << 19) | (1 << 20) | (1 << 21) | (1 << 26)  
+   (1 << 19) | (1 << 20) | (1 << 21) | (1 << 26)
 );
-   
+
 
 namespace rgb_matrix {
 GPIO::GPIO() : output_bits_(0), gpio_port_(NULL) {
 }
-   
+
 uint32_t GPIO::InitOutputs(uint32_t outputs) {
   if (gpio_port_ == NULL) {
     fprintf(stderr, "Attempt to init outputs but initialized.\n");
